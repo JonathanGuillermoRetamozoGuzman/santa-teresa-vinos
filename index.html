@@ -307,7 +307,7 @@
     background: var(--white);
     border: 1px solid rgba(107,26,26,0.12);
     position: relative;
-    overflow: hidden;
+    overflow: visible;
     transition: transform 0.4s ease, box-shadow 0.4s ease;
     cursor: default;
   }
@@ -317,8 +317,9 @@
   }
   .vino-badge {
     position: absolute;
-    top: 1rem;
-    right: 1rem;
+    top: 0.8rem;
+    right: 0.8rem;
+    z-index: 10;
     background: var(--wine);
     color: var(--gold-light);
     font-size: 0.6rem;
@@ -593,7 +594,7 @@
     background: var(--white);
     border: 1px solid rgba(139,102,66,0.18);
     position: relative;
-    overflow: hidden;
+    overflow: visible;
     transition: transform 0.4s ease, box-shadow 0.4s ease;
   }
   .pisco-card:hover {
@@ -609,15 +610,15 @@
   .pisco-illustration svg { width: 100%; height: 100%; display: block; }
   .pisco-badge {
     position: absolute;
-    top: 1rem;
-    right: 1rem;
+    top: 0.8rem;
+    right: 0.8rem;
     background: var(--earth);
     color: var(--gold-light);
     font-size: 0.6rem;
     letter-spacing: 0.15em;
     text-transform: uppercase;
     padding: 0.3rem 0.7rem;
-    z-index: 2;
+    z-index: 10;
   }
   .pisco-badge.especial { background: #4a3200; }
   .pisco-badge.nuevo { background: #1a3d1a; }
@@ -2026,20 +2027,27 @@ async function loadProductos() {
 
   try {
     const res = await fetch('/api/productos');
-    if (!res.ok) throw new Error('Error al obtener datos');
     const data = await res.json();
 
-    // Map descripcion field (API returns 'descripcion', local had 'desc')
+    if (!res.ok) {
+      throw new Error(JSON.stringify(data));
+    }
+
     const vinos  = (data.vinos  || []).map(v => ({ ...v, desc: v.descripcion }));
     const piscos = (data.piscos || []).map(p => ({ ...p, desc: p.descripcion }));
+
+    if (vinos.length === 0 && piscos.length === 0) {
+      throw new Error('La API respondió pero sin datos');
+    }
 
     renderVinos(vinos);
     renderPiscos(piscos);
 
   } catch (err) {
-    console.error('Error cargando productos:', err);
-    document.getElementById('vinos-grid').innerHTML  = `<p style="color:#8b6642;font-family:'Cormorant Garamond',serif;font-size:1.1rem;grid-column:1/-1;text-align:center;padding:2rem;">No se pudieron cargar los vinos. Contáctanos directamente.</p>`;
-    document.getElementById('piscos-grid').innerHTML = `<p style="color:#8b6642;font-family:'Cormorant Garamond',serif;font-size:1.1rem;grid-column:1/-1;text-align:center;padding:2rem;">No se pudieron cargar los piscos. Contáctanos directamente.</p>`;
+    console.error('Error cargando productos:', err.message);
+    const msg = (id, tipo) => `<p style="color:#8b6642;font-family:'Cormorant Garamond',serif;font-size:1.1rem;grid-column:1/-1;text-align:center;padding:2rem;">No se pudieron cargar los ${tipo}. Contáctanos directamente.</p>`;
+    document.getElementById('vinos-grid').innerHTML  = msg('vinos-grid',  'vinos');
+    document.getElementById('piscos-grid').innerHTML = msg('piscos-grid', 'piscos');
   }
 }
 
